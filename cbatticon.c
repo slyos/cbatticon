@@ -83,9 +83,6 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
 
-	gtk_status_icon_set_from_icon_name(tray_icon,get_icon_name(percent,state));
-	update_tool_tip(tray_icon,percent,time,state);
-
 	if(prev_state == -1)
 		prev_state = state;
 
@@ -103,8 +100,9 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
         prev_state=state;
 	}
 
-
-	printf("updated icon\n");
+    gtk_status_icon_set_from_icon_name(tray_icon,get_icon_name(percent,state));
+	update_tool_tip(tray_icon,percent,time,state);
+	
 }
 
 
