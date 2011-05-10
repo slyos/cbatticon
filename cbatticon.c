@@ -8,23 +8,26 @@
  * under the terms of the GNU General Public License as published
  * by the Free Software Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
- 
+
 #include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "libnotify/notify.h"
 #include "libacpi.h"
+
+#define PAC 0
+#define PBATT 1
 
 int BATT_CAUT = 25;
 int BATT_LOW =50;
@@ -34,7 +37,7 @@ int BATT_WARNING= 25;
 int warning_displayed = FALSE;
 int prev_state = -1;
 
-static update_batt_info(GtkStatusIcon *tray_icon);
+void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
 void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time,int state);
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state);
@@ -46,21 +49,21 @@ void display_help();
 void command_opt_get(int argc,char **argv);
 
 
-static update_batt_info(GtkStatusIcon *tray_icon){
-	
+void update_batt_info(GtkStatusIcon *tray_icon){
+
 	global_t *global = malloc (sizeof (global_t));
 	battery_t *binfo;
 	adapter_t *ac = &global->adapt;
 	int state, battstate;
 	int bperc,btime;
 	battstate = init_acpi_batt(global);
-	
+
 	state = init_acpi_acadapt(global);
 	if(state == SUCCESS && ac->ac_state == P_BATT)
-		state = P_BATT;
+		state = PBATT;
 	else if(state == SUCCESS && ac->ac_state == P_AC)
-		state=P_AC;
-		
+		state=PAC;
+
 	if(battstate == SUCCESS){
 		binfo = &batteries[0];
 		read_acpi_batt(0);
@@ -72,107 +75,96 @@ static update_batt_info(GtkStatusIcon *tray_icon){
 			printf("could not get battery info.\n");
 			exit(-2);
 		}
-			
+
 	}
 	free(global);
 	update_status_icon(tray_icon,bperc,btime,state);
 }
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
+
 	gtk_status_icon_set_from_icon_name(tray_icon,get_icon_name(percent,state));
 	update_tool_tip(tray_icon,percent,time,state);
-	
+
 	if(prev_state == -1)
 		prev_state = state;
-	
-	if(state==P_BATT && percent<BATT_WARNING && warning_displayed == FALSE){
+
+	if(state==PBATT && percent<BATT_WARNING && warning_displayed == FALSE){
 			notify_user("WARNING! Low battery!");
 			warning_displayed=TRUE;
 	}
-	
+
 	if(state !=prev_state){
-		if(state == P_AC)
+		warning_displayed=FALSE;
+		if(state == PAC)
 			notify_user("Plugged into AC");
 		else
 			notify_user("Unplugged from AC");
-		warning_displayed=FALSE;
+        prev_state=state;
 	}
-	prev_state=state;
-	printf("updated icon\n");	
+
+
+	printf("updated icon\n");
 }
 
 
 gchar* get_icon_name(int val,int state){
 	GString *fn;
-	
+
 	fn = g_string_new("battery-");
-	if(val==100&&state==P_AC){
+	if(val==100&&state==PAC){
 		g_string_append(fn,"full-charged");
 	}else{
-		if(val <BATT_CAUT){
+		if(val <BATT_CAUT)
 			g_string_append(fn,"caution");
-		}else if(val <BATT_LOW)
+		else if(val <BATT_LOW)
 			g_string_append(fn,"low");
 		else if(val <BATT_GOOD)
 			g_string_append(fn,"good");
 		else
 			g_string_append(fn,"full");
-			
-		if(state==P_AC)
+
+		if(state==PAC)
 			g_string_append(fn,"-charging");
-	}	
+	}
 	return fn->str;
 }
 
 gchar *get_time(int mins){
 	GString *time;
 	gint hours, minutes;
-	
+
 	hours = mins / 60;
 	minutes = mins - (60 * hours);
-	
+
 	time = g_string_new("");
 	if (hours > 0)
 		g_string_sprintf(time, "%2d hours, %2d minutes remaining", hours, minutes);
 	else if(minutes>0)
 		g_string_sprintf(time, "%2d minutes remaining", minutes);
 	return time->str;
-	
+
 }
 
 
 void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 	GString *tooltip;
 	tooltip = g_string_new("Battery ");
-	
+
 	if(state == P_BATT)
 		g_string_append(tooltip, " dis");
-	
+
 	g_string_append(tooltip, "charging");
-	g_string_sprintfa(tooltip, " (%i\%)", percent);
-	
+	g_string_sprintfa(tooltip, " (%i%%)", percent);
+
 	gchar* timeC = get_time(time);
-	if (timeC != "")
+	if (g_strcasecmp(timeC,""))
 	{
 		g_string_sprintfa(tooltip, "\n%s", timeC);
 	}
-	
+	free(timeC);
 	gtk_status_icon_set_tooltip_text (tray_icon,tooltip->str);
 }
-
-
-static GtkStatusIcon *create_tray_icon(){
-	 GtkStatusIcon *tray_icon;
-	 tray_icon = gtk_status_icon_new_from_stock(GTK_STOCK_QUIT);
-	 
-	 gtk_status_icon_set_visible(tray_icon, TRUE);
-     update_batt_info(tray_icon);
-     g_timeout_add_seconds(2,(GSourceFunc)update_batt_info,(gpointer)tray_icon);
- 
-     return tray_icon;
-		
-}
-
 
 void notify_user(char* message){
 		NotifyNotification *alertUser;
@@ -180,7 +172,19 @@ void notify_user(char* message){
 		notify_notification_set_timeout(alertUser,5000);
 		GError *error = NULL;
 		notify_notification_show(alertUser,&error);
-		
+
+}
+
+static GtkStatusIcon *create_tray_icon(){
+	 GtkStatusIcon *tray_icon;
+	 tray_icon = gtk_status_icon_new_from_stock(GTK_STOCK_QUIT);
+
+	 gtk_status_icon_set_visible(tray_icon, TRUE);
+     update_batt_info(tray_icon);
+     g_timeout_add_seconds(3,(GSourceFunc)update_batt_info,(gpointer)tray_icon);
+
+     return tray_icon;
+
 }
 
 void display_help(){
@@ -196,7 +200,7 @@ void display_help(){
 
 void command_opt_get(int argc,char **argv){
 	int c;
-		char *value= NULL;
+
 		while ((c = getopt (argc, argv, "g:l:c:w:h")) != -1){
 			switch (c){
 				case 'g':
@@ -227,16 +231,16 @@ int main(int argc, char **argv) {
 		printf("No acpi support for your system?\n");
 		return -1;
 	}
-	
+
 	command_opt_get(argc,argv);
-	
+
     GtkStatusIcon *tray_icon;
     notify_init("cbatticon");
     gtk_init(&argc, &argv);
     tray_icon = create_tray_icon();
-    
-    
+
+
 	gtk_main();
- 
+
     return 0;
 }
