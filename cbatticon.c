@@ -23,8 +23,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "libnotify/notify.h"
-#include "libacpi.h"
+#include <libnotify/notify.h>
+#include <libacpi.h>
 
 #define PAC 0
 #define PBATT 1
@@ -36,6 +36,8 @@ int BATT_WARNING= 25;
 
 int warning_displayed = FALSE;
 int prev_state = -1;
+
+int display_notification = TRUE;
 
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
@@ -171,11 +173,13 @@ void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 }
 
 void notify_user(char* message){
+	if(display_notification==TRUE){
 		NotifyNotification *alertUser;
 		alertUser = notify_notification_new("cbatticon",message,get_icon_name(100,1));
 		notify_notification_set_timeout(alertUser,5000);
 		GError *error = NULL;
 		notify_notification_show(alertUser,&error);
+	}
 
 }
 
@@ -197,6 +201,7 @@ void display_help(){
 				"\t-l Low battery level(default: %d)\n"
 				"\t-c Caution battery level(default: %d)\n"
 				"\t-w Warning battery level(default: %d)\n"
+				"\t-n Disable notifications\n"
 				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING);
 		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10");
 		abort();
@@ -205,7 +210,7 @@ void display_help(){
 void command_opt_get(int argc,char **argv){
 	int c;
 
-		while ((c = getopt (argc, argv, "g:l:c:w:h")) != -1){
+		while ((c = getopt (argc, argv, "g:l:c:w:nh")) != -1){
 			switch (c){
 				case 'g':
 					BATT_GOOD=atoi(optarg);
@@ -218,6 +223,9 @@ void command_opt_get(int argc,char **argv){
 					break;
 				case 'w':
 					BATT_WARNING=atoi(optarg);
+					break;
+				case 'n':
+					display_notification=FALSE;
 					break;
 				case 'h':
 					display_help();
