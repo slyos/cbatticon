@@ -65,6 +65,11 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 		state=PAC;
 
 	if(battstate == SUCCESS){
+		
+		if (global->batt_count < 0){
+			fprintf(stderr, "No batteries in system!\n");
+			exit(-1);
+		}
 		binfo = &batteries[0];
 		read_acpi_batt(0);
 
@@ -93,9 +98,11 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 
 	if(state !=prev_state){
 		warning_displayed=FALSE;
-		if(state == PAC)
+		if(state == PAC){
 			notify_user("Plugged into AC");
-		else
+			if(percent ==100)
+				notify_user("Fully charged");
+		}else
 			notify_user("Unplugged from AC");
         prev_state=state;
 	}
@@ -156,8 +163,7 @@ void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 	g_string_sprintfa(tooltip, " (%i%%)", percent);
 
 	gchar* timeC = get_time(time);
-	if (g_strcasecmp(timeC,""))
-	{
+	if (g_strcasecmp(timeC,""))	{
 		g_string_sprintfa(tooltip, "\n%s", timeC);
 	}
 	free(timeC);
