@@ -34,17 +34,19 @@ int BATT_LOW =50;
 int BATT_GOOD= 75;
 int BATT_WARNING= 25;
 
-int warning_displayed = FALSE;
 int prev_state = -1;
+int prev_perc = 101;
 
 int display_notification = TRUE;
+int notification_time = 5000;
+int warning_notification_time = 10000;
 
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
 void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time,int state);
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state);
 
-void notify_user(char* message);
+void notify_user(char* message,int timeout);
 static GtkStatusIcon *create_tray_icon();
 
 void display_help();
@@ -92,23 +94,24 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 
 	if(prev_state == -1)
 		prev_state = state;
+	
+	
 
-	if(state==PBATT && percent<BATT_WARNING && warning_displayed == FALSE){
-			notify_user("WARNING! Low battery!");
-			warning_displayed=TRUE;
+	if(percent<BATT_WARNING && prev_perc>BATT_WARNING){
+			notify_user("WARNING! Low battery!",warning_notification_time);
 	}
 
 	if(state !=prev_state){
-		warning_displayed=FALSE;
 		if(state == PAC){
-			notify_user("Plugged into AC");
-			if(percent ==100)
-				notify_user("Fully charged");
+			notify_user("Plugged into AC",notification_time);
 		}else
-			notify_user("Unplugged from AC");
+			notify_user("Unplugged from AC",notification_time);
         prev_state=state;
 	}
+	if(percent ==100 && prev_perc<100)
+		notify_user("Fully charged",notification_time);
 
+    prev_perc = percent;
     gtk_status_icon_set_from_icon_name(tray_icon,get_icon_name(percent,state));
 	update_tool_tip(tray_icon,percent,time,state);
 	
@@ -172,11 +175,14 @@ void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 	gtk_status_icon_set_tooltip_text (tray_icon,tooltip->str);
 }
 
-void notify_user(char* message){
+void notify_user(char* message,int timeout){
+	if (timeout == 0)
+		timeout = NOTIFY_EXPIRES_NEVER;
+		
 	if(display_notification==TRUE){
 		NotifyNotification *alertUser;
 		alertUser = notify_notification_new("cbatticon",message,get_icon_name(100,1));
-		notify_notification_set_timeout(alertUser,5000);
+		notify_notification_set_timeout(alertUser,timeout);
 		GError *error = NULL;
 		notify_notification_show(alertUser,&error);
 	}
@@ -197,20 +203,23 @@ static GtkStatusIcon *create_tray_icon(){
 
 void display_help(){
 		printf("Usage:\n\tcbatticon [OPTION...][VALUES...]\n\n");
-		printf("\t-g Good battery level(default: %d)\n"
+		printf( "\t-g Good battery level(default: %d)\n"
 				"\t-l Low battery level(default: %d)\n"
 				"\t-c Caution battery level(default: %d)\n"
-				"\t-w Warning battery level(default: %d)\n"
+				"\t-w Warning notification level(default: %d)\n"
 				"\t-n Disable notifications\n"
-				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING);
-		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10");
-		abort();
+				"\tFor the following 2 arguements, 0 will mean always on\n"
+				"\t-t Number of milliseconds to display notfication(default %d)\n"
+				"\t-r Number of milliseconds to display warning notfication(default %d)\n"
+				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING,notification_time,warning_notification_time);
+		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10\n");
+		exit(0);
 }
 
 void command_opt_get(int argc,char **argv){
 	int c;
 
-		while ((c = getopt (argc, argv, "g:l:c:w:nh")) != -1){
+		while ((c = getopt (argc, argv, "g:l:c:w:t:r:nh")) != -1){
 			switch (c){
 				case 'g':
 					BATT_GOOD=atoi(optarg);
@@ -224,6 +233,12 @@ void command_opt_get(int argc,char **argv){
 				case 'w':
 					BATT_WARNING=atoi(optarg);
 					break;
+				case 't':
+					notification_time=atoi(optarg);
+					break;
+				case 'r':
+					warning_notification_time=atoi(optarg);
+					break;
 				case 'n':
 					display_notification=FALSE;
 					break;
@@ -232,7 +247,7 @@ void command_opt_get(int argc,char **argv){
 					break;
 				default:
 					display_help();
-					abort ();
+					break;
 			   }
 		 }
 
