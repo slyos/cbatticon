@@ -32,7 +32,7 @@
 int BATT_CAUT = 25;
 int BATT_LOW =50;
 int BATT_GOOD= 75;
-int BATT_WARNING= 25;
+int BATT_WARNING= 40;
 
 int prev_state = -1;
 int prev_perc = 101;
