@@ -39,7 +39,7 @@ int prev_perc = 101;
 
 int display_notification = TRUE;
 int notification_time = 5000;
-int warning_notification_time = 10000;
+int warning_notification_time = 0;
 
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
