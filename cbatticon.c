@@ -40,6 +40,7 @@ int prev_perc = 101;
 int display_notification = TRUE;
 int notification_time = 5000;
 int warning_notification_time = 0;
+GString* icon_location = NULL;
 
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
@@ -92,10 +93,9 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
 
-	if(prev_state == -1)
+	if(prev_state == -1){
 		prev_state = state;
-	
-	
+	}
 
 	if(percent<BATT_WARNING && prev_perc>BATT_WARNING){
 			notify_user("WARNING! Low battery!",warning_notification_time);
@@ -111,9 +111,20 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 	if(percent ==100 && prev_perc<100)
 		notify_user("Fully charged",notification_time);
 
-    prev_perc = percent;
-    gtk_status_icon_set_from_icon_name(tray_icon,get_icon_name(percent,state));
+    gchar* icon_name = get_icon_name(percent,state);
+    if(icon_location==NULL){
+		gtk_status_icon_set_from_icon_name(tray_icon,icon_name);
+	}else{
+		GString *icon_full_path = g_string_new(icon_location->str);
+		g_string_append(icon_full_path,icon_name);
+		g_string_append(icon_full_path,".png");
+		gtk_status_icon_set_from_file (tray_icon,icon_full_path->str);
+		printf("%s\n",icon_full_path->str);
+		g_string_free(icon_full_path,TRUE);
+	}
 	update_tool_tip(tray_icon,percent,time,state);
+	
+	prev_perc = percent;
 	
 }
 
@@ -211,15 +222,16 @@ void display_help(){
 				"\tFor the following 2 arguements, 0 will mean always on\n"
 				"\t-t Number of milliseconds to display notfication(default %d)\n"
 				"\t-r Number of milliseconds to display warning notfication(default %d)\n"
+				"\t-i Path to icons(will use current icon theme if not specified). Need trailing / Look at readme for proper usage\n"
 				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING,notification_time,warning_notification_time);
-		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10\n");
+		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10\n\tcbatticon -i /path/to/icons/\n");
 		exit(0);
 }
 
 void command_opt_get(int argc,char **argv){
 	int c;
 
-		while ((c = getopt (argc, argv, "g:l:c:w:t:r:nh")) != -1){
+		while ((c = getopt (argc, argv, "g:l:c:w:t:r:i:nh")) != -1){
 			switch (c){
 				case 'g':
 					BATT_GOOD=atoi(optarg);
@@ -241,6 +253,9 @@ void command_opt_get(int argc,char **argv){
 					break;
 				case 'n':
 					display_notification=FALSE;
+					break;
+				case 'i':
+					icon_location=g_string_new(optarg);
 					break;
 				case 'h':
 					display_help();
