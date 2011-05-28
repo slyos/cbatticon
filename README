@@ -7,9 +7,9 @@ libacpi download page: http://www.ngolde.de/libacpi.html
 Run make and it should compile if you have all the previous dependecies.
 Will add an install option soon.
 
+
 Command line arguments:
 Most of these are available by typing in ./cbatticon -h
-
 
 -c Caution battery level(Default: 25%)
 -l Low battery level (Default: 50%)
