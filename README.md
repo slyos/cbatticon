@@ -38,6 +38,7 @@ For the next two arguments,  0 means always on:
 -i path to icons(will use current icon theme if not specified)
 	Path must have the trailing / at the end of the path. 
 	In the directory these files must be present:
+	
 	battery-full-charged.png
 
 	battery-caution.png
