@@ -36,7 +36,7 @@ COMMAND LINE ARGUMENTS
 >**-r** Number of milliseconds to display warning notifications    Default: 0, always on  
 
 ###Custom icons  
->**-i** path to icons(will use current icon theme if not specified)
+>**-i** path to icons(will use current icon theme if not specified)  
 >> Path must have the trailing / at the end of the path.  
 >> In the directory these files must be present:  
 	
