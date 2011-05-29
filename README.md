@@ -22,9 +22,10 @@ COMMAND LINE ARGUMENTS
 ----------------------
 Most of these are available by typing in ./cbatticon -h
 
--c Caution battery level(Default: 25%)
--l Low battery level (Default: 50%)
--g Good battery level (Default: 75%)
+	-c Caution battery level(Default: 25%)
+	-l Low battery level (Default: 50%)
+	-g Good battery level (Default: 75%)
+
 If caution is greater than any other value, the other values will not be shown.
 
 -w Warning notification level(Default: 40%)
