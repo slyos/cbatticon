@@ -40,15 +40,15 @@ Custom icons
 		Path must have the trailing / at the end of the path. 
 		In the directory these files must be present:
 	
-			+battery-full-charged.png
++battery-full-charged.png
 
-			+battery-caution.png
-			+battery-low.png
-			+battery-good.png
-			+battery-full.png
++battery-caution.png
++battery-low.png
++battery-good.png
++battery-full.png
 
-			+battery-caution-charging.png
-			+battery-low-charing.png
-			+battery-good-charging.png
-			+battery-full.png
++battery-caution-charging.png
++battery-low-charing.png
++battery-good-charging.png
++battery-full.png
 
