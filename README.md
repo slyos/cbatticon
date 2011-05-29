@@ -31,23 +31,24 @@ If caution is greater than any other value, the other values will not be shown.
 	-w Warning notification level Default: 40%
 	-n Disable ALL notifications
 
-For the next two arguments,  0 means always on:
+For the next two arguments,  0 means always on.
 	-t Number of milliseconds to display regular notifications(Default: 5000)
 	-r Number of milliseconds to display warning notifications(Default: 0, always on)
 
+Custom icons
 	-i path to icons(will use current icon theme if not specified)
 		Path must have the trailing / at the end of the path. 
 		In the directory these files must be present:
 	
-			battery-full-charged.png
+			+battery-full-charged.png
 
-			battery-caution.png
-			battery-low.png
-			battery-good.png
-			battery-full.png
+			+battery-caution.png
+			+battery-low.png
+			+battery-good.png
+			+battery-full.png
 
-			battery-caution-charging.png
-			battery-low-charing.png
-			battery-good-charging.png
-			battery-full.png
+			+battery-caution-charging.png
+			+battery-low-charing.png
+			+battery-good-charging.png
+			+battery-full.png
 
