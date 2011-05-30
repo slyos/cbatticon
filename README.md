@@ -50,3 +50,6 @@ COMMAND LINE ARGUMENTS
 + battery-good-charging.png
 + battery-full.png
 
+>**-e** to change the extension of the icons.     Default: .png  
+>Remeber the **'.'** before the extension
+
