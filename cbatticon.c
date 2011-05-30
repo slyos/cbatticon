@@ -233,7 +233,8 @@ void display_help(){
 				"\t-t Number of milliseconds to display notfication(default %d)\n"
 				"\t-r Number of milliseconds to display warning notfication(default %d)\n"
 				"\t-i Path to icons(will use current icon theme if not specified). Need trailing / Look at readme for proper usage\n"
-				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING,notification_time,warning_notification_time);
+				"\t-e The extensions for the icons,(default %s)\n"
+				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING,notification_time,warning_notification_time,icon_extension);
 		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10\n\tcbatticon -i /path/to/icons/\n");
 		exit(0);
 }
