@@ -41,6 +41,7 @@ int display_notification = TRUE;
 int notification_time = 5000;
 int warning_notification_time = 0;
 GString* icon_location = NULL;
+gchar* icon_extension = ".png";
 
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
@@ -93,14 +94,17 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
 
+	
 	if(prev_state == -1){
 		prev_state = state;
 	}
 
+	//display warning only once
 	if(percent<BATT_WARNING && prev_perc>BATT_WARNING){
 			notify_user("WARNING! Low battery!",warning_notification_time);
 	}
 
+	//adapter notifications
 	if(state !=prev_state){
 		if(state == PAC){
 			notify_user("Plugged into AC",notification_time);
@@ -108,27 +112,31 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 			notify_user("Unplugged from AC",notification_time);
         prev_state=state;
 	}
+	
+	//full charge
 	if(percent ==100 && prev_perc<100)
 		notify_user("Fully charged",notification_time);
 
+	//changing tray icon
     gchar* icon_name = get_icon_name(percent,state);
     if(icon_location==NULL){
 		gtk_status_icon_set_from_icon_name(tray_icon,icon_name);
 	}else{
 		GString *icon_full_path = g_string_new(icon_location->str);
 		g_string_append(icon_full_path,icon_name);
-		g_string_append(icon_full_path,".png");
+		g_string_append(icon_full_path,icon_extension);
 		gtk_status_icon_set_from_file (tray_icon,icon_full_path->str);
 		printf("%s\n",icon_full_path->str);
 		g_string_free(icon_full_path,TRUE);
 	}
-	update_tool_tip(tray_icon,percent,time,state);
 	
+	
+	update_tool_tip(tray_icon,percent,time,state);
 	prev_perc = percent;
 	
 }
 
-
+//returns appropriate icon name
 gchar* get_icon_name(int val,int state){
 	GString *fn;
 
@@ -151,6 +159,7 @@ gchar* get_icon_name(int val,int state){
 	return fn->str;
 }
 
+//returns time remaining
 gchar *get_time(int mins){
 	GString *time;
 	gint hours, minutes;
@@ -178,21 +187,21 @@ void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 	g_string_append(tooltip, "charging");
 	g_string_sprintfa(tooltip, " (%i%%)", percent);
 
+	//get_time returns "" if minute remaining == 0
 	gchar* timeC = get_time(time);
 	if (g_strcasecmp(timeC,""))	{
 		g_string_sprintfa(tooltip, "\n%s", timeC);
 	}
+	
 	free(timeC);
 	gtk_status_icon_set_tooltip_text (tray_icon,tooltip->str);
 }
 
+//creates a popup message
 void notify_user(char* message,int timeout){
-	if (timeout == 0)
-		timeout = NOTIFY_EXPIRES_NEVER;
-		
 	if(display_notification==TRUE){
 		NotifyNotification *alertUser;
-		alertUser = notify_notification_new("cbatticon",message,get_icon_name(100,1));
+		alertUser = notify_notification_new("cbatticon",message,NULL);
 		notify_notification_set_timeout(alertUser,timeout);
 		GError *error = NULL;
 		notify_notification_show(alertUser,&error);
@@ -212,6 +221,7 @@ static GtkStatusIcon *create_tray_icon(){
 
 }
 
+//terminal help
 void display_help(){
 		printf("Usage:\n\tcbatticon [OPTION...][VALUES...]\n\n");
 		printf( "\t-g Good battery level(default: %d)\n"
@@ -228,10 +238,12 @@ void display_help(){
 		exit(0);
 }
 
+
+//command line arguments	
 void command_opt_get(int argc,char **argv){
 	int c;
 
-		while ((c = getopt (argc, argv, "g:l:c:w:t:r:i:nh")) != -1){
+		while ((c = getopt (argc, argv, "g:l:c:w:t:r:i:e:nh")) != -1){
 			switch (c){
 				case 'g':
 					BATT_GOOD=atoi(optarg);
@@ -256,6 +268,9 @@ void command_opt_get(int argc,char **argv){
 					break;
 				case 'i':
 					icon_location=g_string_new(optarg);
+					break;
+				case 'e':
+					icon_extension=optarg;
 					break;
 				case 'h':
 					display_help();
