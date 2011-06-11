@@ -1,5 +1,5 @@
 #Cbatticon makefile
-
+DESTDIR = /usr/bin
 cbatticon: 
 	gcc cbatticon.c -o cbatticon `pkg-config --cflags --libs gtk+-2.0 libnotify` -lacpi
 	
@@ -9,5 +9,5 @@ clean:
 	rm cbatticon
 
 install: cbatticon
-	mv cbatticon /usr/bin
-	echo "installed to /usr/bin"
+	mv cbatticon ${DESTDIR}
+	

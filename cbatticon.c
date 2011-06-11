@@ -100,7 +100,7 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 	}
 
 	//display warning only once
-	if(percent<BATT_WARNING && prev_perc>BATT_WARNING){
+	if(percent<BATT_WARNING && prev_perc>=BATT_WARNING){
 			notify_user("WARNING! Low battery!",warning_notification_time);
 	}
 
