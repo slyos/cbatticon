@@ -129,10 +129,11 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 		printf("%s\n",icon_full_path->str);
 		g_string_free(icon_full_path,TRUE);
 	}
+	prev_perc = percent;
 	
 	
 	update_tool_tip(tray_icon,percent,time,state);
-	prev_perc = percent;
+	
 	
 }
 
