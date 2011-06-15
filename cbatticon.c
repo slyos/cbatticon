@@ -34,15 +34,18 @@ int BATT_LOW =50;
 int BATT_GOOD= 75;
 int BATT_WARNING= 40;
 
-int prev_state = -1;
+int prev_state = PBATT;
 int prev_perc = 101;
 
 int display_notification = TRUE;
 int notification_time = 5000;
 int warning_notification_time = 0;
+
 GString* icon_location = NULL;
 gchar* icon_extension = ".png";
 
+
+//Functions start
 void update_batt_info(GtkStatusIcon *tray_icon);
 gchar* get_icon_name(int val,int state);
 void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time,int state);
@@ -53,8 +56,10 @@ static GtkStatusIcon *create_tray_icon();
 
 void display_help();
 void command_opt_get(int argc,char **argv);
+//Functions end
 
 
+//battery state,percent, and time found here
 void update_batt_info(GtkStatusIcon *tray_icon){
 
 	global_t *global = malloc (sizeof (global_t));
@@ -94,16 +99,16 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
 
-	
-	if(prev_state == -1){
-		prev_state = state;
-	}
-
-	//display warning only once
+	//display low battery (once)
 	if(percent<BATT_WARNING && prev_perc>=BATT_WARNING){
 			notify_user("WARNING! Low battery!",warning_notification_time);
 	}
-
+	
+	//full charge
+	if(percent ==100 && prev_perc<100){
+		notify_user("Fully charged",notification_time);
+	}
+	
 	//adapter notifications
 	if(state !=prev_state){
 		if(state == PAC){
@@ -113,9 +118,6 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
         prev_state=state;
 	}
 	
-	//full charge
-	if(percent ==100 && prev_perc<100)
-		notify_user("Fully charged",notification_time);
 
 	//changing tray icon
     gchar* icon_name = get_icon_name(percent,state);
@@ -129,9 +131,8 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 		printf("%s\n",icon_full_path->str);
 		g_string_free(icon_full_path,TRUE);
 	}
+	
 	prev_perc = percent;
-	
-	
 	update_tool_tip(tray_icon,percent,time,state);
 	
 	
