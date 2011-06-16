@@ -32,7 +32,7 @@
 int BATT_CAUT = 25;
 int BATT_LOW =50;
 int BATT_GOOD= 75;
-int BATT_WARNING= 40;
+int BATT_WARNING= 33;
 
 int prev_state = PBATT;
 int prev_perc = 101;
@@ -94,6 +94,7 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 	}
 	free(global);
+	printf("testing\n");
 	update_status_icon(tray_icon,bperc,btime,state);
 }
 
@@ -103,7 +104,7 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 	if(percent<BATT_WARNING && prev_perc>=BATT_WARNING){
 			notify_user("WARNING! Low battery!",warning_notification_time);
 	}
-	
+		
 	//full charge
 	if(percent ==100 && prev_perc<100){
 		notify_user("Fully charged",notification_time);
@@ -225,7 +226,7 @@ static GtkStatusIcon *create_tray_icon(){
 
 //terminal help
 void display_help(){
-		printf("Usage:\n\tcbatticon [OPTION...][VALUES...]\n\n");
+		printf("testUsage:\n\tcbatticon [OPTION...][VALUES...]\n\n");
 		printf( "\t-g Good battery level(default: %d)\n"
 				"\t-l Low battery level(default: %d)\n"
 				"\t-c Caution battery level(default: %d)\n"
@@ -291,7 +292,7 @@ int main(int argc, char **argv) {
 		printf("No acpi support for your system?\n");
 		return -1;
 	}
-
+	
 	command_opt_get(argc,argv);
 
     GtkStatusIcon *tray_icon;
