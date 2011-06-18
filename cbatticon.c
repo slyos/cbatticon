@@ -32,7 +32,7 @@
 int BATT_CAUT = 25;
 int BATT_LOW =50;
 int BATT_GOOD= 75;
-int BATT_WARNING= 33;
+int BATT_WARNING= 40;
 
 int prev_state = PBATT;
 int prev_perc = 101;
@@ -94,7 +94,6 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 
 	}
 	free(global);
-	printf("testing\n");
 	update_status_icon(tray_icon,bperc,btime,state);
 }
 
@@ -135,7 +134,6 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 	
 	prev_perc = percent;
 	update_tool_tip(tray_icon,percent,time,state);
-	
 	
 }
 
