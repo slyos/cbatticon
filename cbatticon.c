@@ -32,10 +32,11 @@
 int BATT_CAUT = 25;
 int BATT_LOW =50;
 int BATT_GOOD= 75;
-int BATT_WARNING= 40;
+int BATT_WARNING= 41;
 
 int prev_state = PBATT;
 int prev_perc = 101;
+
 
 int display_notification = TRUE;
 int notification_time = 5000;
