@@ -29,6 +29,10 @@
 #define PAC 0
 #define PBATT 1
 
+#define OPT_BATT_VALUES "battery"
+#define OPT_NOTIFICATION_VALUES  "notification"
+#define OPT_ICON_VALUES  "icons"
+
 int BATT_CAUT = 25;
 int BATT_LOW =50;
 int BATT_GOOD= 75;
@@ -44,23 +48,33 @@ int warning_notification_time = 0;
 
 GString* icon_location = NULL;
 gchar* icon_extension = ".png";
+char* config_file_path=NULL;
 
 
 //Functions start
 void update_batt_info(GtkStatusIcon *tray_icon);
-gchar* get_icon_name(int val,int state);
-void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time,int state);
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state);
+gchar* get_icon_name(int val,int state);
+gchar *get_time(int mins);
+void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time,int state);
+
 
 void notify_user(char* message,int timeout);
 static GtkStatusIcon *create_tray_icon();
+
+
+
+void file_get_battery_values(GKeyFile* file);
+void file_get_notification_values(GKeyFile* file);
+void file_get_icon_values(GKeyFile* file);
+void file_opt_get();
 
 void display_help();
 void command_opt_get(int argc,char **argv);
 //Functions end
 
 
-//battery state,percent, and time found here
+//function called every 2 seconds
 void update_batt_info(GtkStatusIcon *tray_icon){
 
 	global_t *global = malloc (sizeof (global_t));
@@ -97,6 +111,7 @@ void update_batt_info(GtkStatusIcon *tray_icon){
 	free(global);
 	update_status_icon(tray_icon,bperc,btime,state);
 }
+
 
 void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state){
 
@@ -138,7 +153,7 @@ void update_status_icon(GtkStatusIcon *tray_icon,int percent,int time,int state)
 	
 }
 
-//returns appropriate icon name
+
 gchar* get_icon_name(int val,int state){
 	GString *fn;
 
@@ -161,7 +176,7 @@ gchar* get_icon_name(int val,int state){
 	return fn->str;
 }
 
-//returns time remaining
+
 gchar *get_time(int mins){
 	GString *time;
 	gint hours, minutes;
@@ -199,7 +214,7 @@ void update_tool_tip(GtkStatusIcon *tray_icon,int percent,int time, int state){
 	gtk_status_icon_set_tooltip_text (tray_icon,tooltip->str);
 }
 
-//creates a popup message
+
 void notify_user(char* message,int timeout){
 	if(display_notification==TRUE){
 		NotifyNotification *alertUser;
@@ -211,6 +226,7 @@ void notify_user(char* message,int timeout){
 
 }
 
+
 static GtkStatusIcon *create_tray_icon(){
 	 GtkStatusIcon *tray_icon;
 	 tray_icon = gtk_status_icon_new_from_stock(GTK_STOCK_QUIT);
@@ -221,6 +237,110 @@ static GtkStatusIcon *create_tray_icon(){
 
      return tray_icon;
 
+}
+
+
+
+int main(int argc, char **argv) {
+	if(check_acpi_support() == NOT_SUPPORTED){
+		printf("No acpi support for your system?\n");
+		return -1;
+	}
+	file_opt_get();
+	command_opt_get(argc,argv);
+
+    GtkStatusIcon *tray_icon;
+    notify_init("cbatticon");
+    gtk_init(&argc, &argv);
+    tray_icon = create_tray_icon();
+
+
+	gtk_main();
+
+    return 0;
+}
+
+
+void file_opt_get(){
+	GKeyFile* file =  g_key_file_new();
+	gsize *length;
+	char *p;
+	
+	if(config_file_path==NULL){
+		p = getenv("HOME");
+		strcat(p,"/.config/cbatticon/config");
+	}
+	if(!g_key_file_load_from_file(file,"~/.config/cbatticon/config",G_KEY_FILE_NONE,NULL)){
+		printf("Error reading file\n");
+		return ;
+	}
+	if(g_key_file_has_group(file,OPT_BATT_VALUES)){
+		file_get_battery_values(file);
+	}
+	if(g_key_file_has_group(file,OPT_NOTIFICATION_VALUES)){
+		file_get_notification_values(file);
+	}
+	if(g_key_file_has_group(file,OPT_ICON_VALUES)){
+		file_get_icon_values(file);
+	}
+}
+
+void file_get_battery_values(GKeyFile* file){
+	gint val;
+	if ((val=g_key_file_get_integer(file,OPT_BATT_VALUES,"good",NULL))!=0){
+			BATT_GOOD=val;
+	}
+	if ((val=g_key_file_get_integer(file,OPT_BATT_VALUES,"low",NULL))!=0){
+			BATT_LOW=val;
+	}
+	if ((val=g_key_file_get_integer(file,OPT_BATT_VALUES,"caution",NULL))!=0){
+			BATT_CAUT=val;
+	}
+		
+		
+}
+
+void file_get_notification_values(GKeyFile* file){
+	gint val;
+	gboolean enabled;
+	if(g_key_file_has_key(file,OPT_NOTIFICATION_VALUES,"enabled",NULL)!=FALSE){
+			enabled = g_key_file_get_boolean(file,OPT_NOTIFICATION_VALUES,"enabled",NULL);
+			if(!enabled){
+				display_notification=FALSE;
+				return;
+			}
+	}
+	
+	
+	if ((val=g_key_file_get_integer(file,OPT_NOTIFICATION_VALUES,"warning",NULL))!=0){
+			BATT_WARNING=val;
+	}
+	if ((val=g_key_file_get_integer(file,OPT_NOTIFICATION_VALUES,"regular-delay",NULL))!=0){
+			notification_time = val;
+			if(val==-1)
+				notification_time=0;
+		
+	}
+	if ((val=g_key_file_get_integer(file,OPT_NOTIFICATION_VALUES,"warning-delay",NULL))!=0){
+			notification_time = val;
+			if(val==-1)
+				notification_time=0;
+	}
+}
+
+void file_get_icon_values(GKeyFile* file){
+	gchar* val=NULL;
+	if(g_key_file_has_key(file,OPT_ICON_VALUES,"path",NULL)==FALSE){
+			return;
+	}
+	
+	if ((val=g_key_file_get_string(file,OPT_ICON_VALUES,"path",NULL))!=NULL){
+		icon_location=g_string_new(val);
+	}
+	
+	if ((val=g_key_file_get_string(file,OPT_ICON_VALUES,"extension",NULL))!=NULL){
+		icon_extension=val;
+	}
 }
 
 //terminal help
@@ -236,71 +356,55 @@ void display_help(){
 				"\t-r Number of milliseconds to display warning notfication(default %d)\n"
 				"\t-i Path to icons(will use current icon theme if not specified). Need trailing / Look at readme for proper usage\n"
 				"\t-e The extensions for the icons,(default %s)\n"
+				"\n\n\t-o The config file location (do not use ~, only full path followed by )\n"
 				,BATT_GOOD,BATT_LOW,BATT_CAUT,BATT_WARNING,notification_time,warning_notification_time,icon_extension);
 		printf("\n\texample: cbatticon -g 90\n\tcbatticon -g 90 -b10\n\tcbatticon -i /path/to/icons/\n");
 		exit(0);
 }
 
-
 //command line arguments	
 void command_opt_get(int argc,char **argv){
 	int c;
 
-		while ((c = getopt (argc, argv, "g:l:c:w:t:r:i:e:nh")) != -1){
-			switch (c){
-				case 'g':
-					BATT_GOOD=atoi(optarg);
-					break;
-				case 'l':
-					BATT_LOW=atoi(optarg);
-					break;
-				case 'c':
-					BATT_CAUT=atoi(optarg);
-					break;
-				case 'w':
-					BATT_WARNING=atoi(optarg);
-					break;
-				case 't':
-					notification_time=atoi(optarg);
-					break;
-				case 'r':
-					warning_notification_time=atoi(optarg);
-					break;
-				case 'n':
-					display_notification=FALSE;
-					break;
-				case 'i':
-					icon_location=g_string_new(optarg);
-					break;
-				case 'e':
-					icon_extension=optarg;
-					break;
-				case 'h':
-					display_help();
-					break;
-				default:
-					display_help();
-					break;
-			   }
-		 }
+	while ((c = getopt (argc, argv, "g:l:c:w:t:r:i:e:o:nh")) != -1){
+		switch (c){
+			case 'g':
+				BATT_GOOD=atoi(optarg);
+				break;
+			case 'l':
+				BATT_LOW=atoi(optarg);
+				break;
+			case 'c':
+				BATT_CAUT=atoi(optarg);
+				break;
+			case 'w':
+				BATT_WARNING=atoi(optarg);
+				break;
+			case 't':
+				notification_time=atoi(optarg);
+				break;
+			case 'r':
+				warning_notification_time=atoi(optarg);
+				break;
+			case 'n':
+				display_notification=FALSE;
+				break;
+			case 'i':
+				icon_location=g_string_new(optarg);
+				break;
+			case 'e':
+				icon_extension=optarg;
+				break;
+			case 'o':
+				config_file_path=optarg;
+				break;
+			case 'h':
+				display_help();
+				break;
+			default:
+				display_help();
+				break;
+		   }
+	 }
 
-}
-
-int main(int argc, char **argv) {
-	if(check_acpi_support() == NOT_SUPPORTED){
-		printf("No acpi support for your system?\n");
-		return -1;
-	}
-	
-	command_opt_get(argc,argv);
-
-    GtkStatusIcon *tray_icon;
-    notify_init("cbatticon");
-    gtk_init(&argc, &argv);
-    tray_icon = create_tray_icon();
-
-
-	gtk_main();
-
-    return 0;
 }
