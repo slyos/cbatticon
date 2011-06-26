@@ -1,0 +1,21 @@
+#Put this file in /home/USER_NAME/.config/cbatticon/config
+#Make sure you have a HOME environment variable setup, else use the -o 
+#option when launching cbatticon
+
+#Keep layout the same, you can remove entire groups (the [name]) 
+#If a key is not found (ex, good is not found in battery), default values are used.
+
+[battery]
+good=75
+low=50
+caution=25
+[notification]
+#if enabled=false all other values are ignored
+enabled=true 
+warning=40
+regular-delay=5000
+warning-delay=-1
+[icons]
+#please remember the trailing / at the end
+path="/path/to/icon/"
+extension=".png"
